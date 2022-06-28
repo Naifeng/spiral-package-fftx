@@ -4,6 +4,8 @@
 
 Load(fftx);
 ImportAll(fftx);
+Load(nttx);
+ImportAll(nttx);
 Import(simt);
 
 # startup script should set LocalConfig.fftx.defaultConf() -> LocalConfig.fftx.confGPU() 

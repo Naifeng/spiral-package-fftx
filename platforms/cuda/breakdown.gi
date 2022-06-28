@@ -76,7 +76,7 @@ NewRulesFor(MDDFT, rec(
         children  := nt -> let(a_lengths := nt.params[1],
                                a_exp := nt.params[2],
                                tags := nt.getTags(),
-                               [ [TCompose(List(nt.params[1], i->TTensorI(DFT(i, a_exp), Product(nt.params[1])/i, AVec, APar))).withTags(tags) ]]),
+                               [ [TCompose(List(nt.params[1], i->TTensorI(NTT(i, a_exp), Product(nt.params[1])/i, AVec, APar))).withTags(tags) ]]),
         apply := (nt, C, cnt) -> C[1]
     )
 ));

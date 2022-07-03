@@ -68,30 +68,8 @@ NewRulesFor(MDDFT, rec(
                                tags := nt.getTags(),
                                [ [TCompose(List(nt.params[1], i->TTensorI(DFT(i, a_exp), Product(nt.params[1])/i, AVec, APar))).withTags(tags) ]]),
         apply := (nt, C, cnt) -> C[1]
-    ),
-
-    # Move into the NTT rule -> nttx package
-    # load(simt)
-    # load(fftx)
-    # load(nttx)
-    NTT_KL := rec(
-        # change here
-        applicable := nt->nt.hasTags() and ForAll(nt.getTags(), _isSIMTTag) and Length(nt.params[1]) > 1,
-
-        # keep it here
-        children  := nt -> let(# Error(),
-                               a_lengths := nt.params[1],
-                               a_exp := nt.params[2],
-                               tags := nt.getTags(),
-                               # change here
-                               [ [TCompose(List(nt.params[1], i->TTensorI(DFT(i, a_exp), Product(nt.params[1])/i, AVec, APar))).withTags(tags) ]]),
-                                # step 3: put NTT here and set up recursive rules
-
-        apply := (nt, C, cnt) -> C[1]
     )
 ));
-
-# NewRulesFor(NTT
 
 NewRulesFor(MDPRDFT, rec(
     MDPRDFT_3D_SIMT := rec(

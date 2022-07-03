@@ -123,7 +123,8 @@ ParseOptsCUDA := function(conf, t)
 #            _opts := FFTXGlobals.getOpts(_conf);        
 #            return _opts;
 #        fi;        
-
+        
+        # Error();
         # detect batch of DFT/PRDFT
         if ((Length(Collect(t, TTensorInd)) >= 1) or let(lst := Collect(t, TTensorI), (Length(lst) >= 1) and ForAll(lst, l->l.params[2] > 1))) and 
             ((Length(Collect(t, DFT)) = 1) or (Length(Collect(t, PRDFT)) = 1) or (Length(Collect(t, IPRDFT)) = 1)) then
@@ -158,11 +159,21 @@ ParseOptsCUDA := function(conf, t)
         fi;
        
         # detect 3D DFT/Batch DFT
+
         _tt := Collect(t, MDDFT)::Collect(t, MDPRDFT)::Collect(t, IMDPRDFT)::Collect(t, PrunedMDPRDFT)::Collect(t, PrunedIMDPRDFT);
-        if Length(_tt) = 1 and Length(_tt[1].params[1]) = 3 then
+        
+
+        # Error();
+
+        # _tt_ntt := Collect(t, TTensorI)[1].params[1];
+
+        # a new opts in nttx?
+        
+        if (Length(_tt) = 1 and Length(_tt[1].params[1]) = 3) then
             _conf := FFTXGlobals.confFFTCUDADevice();
             _opts := FFTXGlobals.getOpts(_conf);
-#                Error();
+
+            # Error();
 
             # opts for high performance CUDA cuFFT
             if ForAll(_tt[1].params[1], i-> i in _HPCSupportedSizesCUDA) then
@@ -197,6 +208,8 @@ ParseOptsCUDA := function(conf, t)
                 _opts.postProcessCode := (c, opts) -> FixUpTeslaV_Code(c, opts);    
 #                _opts.postProcessCode := (c, opts) -> FixUpTeslaV_Code(PingPong_3Stages(c, opts), opts);    
                 _opts.fixUpTeslaV_Code := true;
+
+                # Error();
 
                 if ((Length(Collect(t, TTensorInd)) >= 1) or let(lst := Collect(t, TTensorI), (Length(lst) >= 1) and ForAll(lst, l->l.params[2] > 1))) then
                     _opts.operations.Print := s -> Print("<FFTX CUDA HPC Batch MDDFT/MDPRDFT/MDIPRDFT options record>");
@@ -252,6 +265,7 @@ ParseOptsCUDA := function(conf, t)
         tt := _promote1(Copy(t));
 
         if ObjId(tt) = TFCall then
+
             _tt := tt.params[1];
             # check for convolution
             if (ObjId(_tt) in [PrunedMDPRDFT, PrunedIMDPRDFT, MDRConv, MDRConvR, IOPrunedMDRConv]) or ((ObjId(_tt) in [TTensorI, TTensorInd]) and (ObjId(_tt.params[1]) in [MDRConv, MDRConvR])) then 

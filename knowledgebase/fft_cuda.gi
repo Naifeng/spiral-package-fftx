@@ -21,7 +21,7 @@ DFT_PD_MAX := 13;
 
 fftCUDADeviceOpts := function(arg) # specific to FFT size 100...
     local opts;
-    
+    # Error();
     opts := Copy(FFTCUDADeviceOpts);
     opts.breakdownRules.Circulant := [Circulant_PRDFT_FDataNT];
     opts.breakdownRules.PRDFT := List([PRDFT1_Base1, PRDFT1_Base2, CopyFields(PRDFT1_CT, 

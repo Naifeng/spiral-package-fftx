@@ -307,6 +307,17 @@ NewRulesFor(TTensorI, rec(
         children := nt -> [[ nt.params[1].withTags(DropLast(nt.getTags(), 1)) ]],
         apply := (nt, c, cnt) -> c[1]
     ),
+#   L (I x A) without peeling
+#   adapted from L (I x A) below
+    L_IxA_SIMT_nopeel := rec(
+        forTransposition := false,
+        # L^mn_n * (I_m (x) A_n) 
+        applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsVecPar(nt.params) and nt.params[2] > 1,
+        children := (self, nt) >> let(n := Rows(nt.params[1]), m:= nt.params[2],
+            [[ TCompose([TL(m*n, n, 1, 1), 
+                TTensorI(nt.params[1], m, APar, APar)]).withTags(nt.getTags()) ]]),
+        apply := (nt, c, cnt) -> c[1]
+    ),
 #   L (I x A)
     L_IxA_SIMT := rec(
         forTransposition := false,

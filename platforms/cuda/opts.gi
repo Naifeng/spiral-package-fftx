@@ -177,8 +177,7 @@ ParseOptsCUDA := function(conf, t)
 
             # opts for high performance CUDA cuFFT
             if ForAll(_tt[1].params[1], i-> i in _HPCSupportedSizesCUDA) then
-                # _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.MDDFT_tSPL_Pease_SIMT];
-                _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.NTT_KL];
+                _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.MDDFT_tSPL_Pease_SIMT];
                 _opts.breakdownRules.MDPRDFT := [fftx.platforms.cuda.MDPRDFT_tSPL_Pease_SIMT];
                 _opts.breakdownRules.IMDPRDFT := [fftx.platforms.cuda.IMDPRDFT_tSPL_Pease_SIMT];
                 _opts.breakdownRules.TTwiddle := [ TTwiddle_Tw1 ];
@@ -234,8 +233,7 @@ ParseOptsCUDA := function(conf, t)
 
             # opts for high performance CUDA cuFFT
             if Length(Filtered(_tt, i -> ObjId(i) = MDDFT)) > 0 and ForAll(_tt[1].params[1], i-> i in _HPCSupportedSizesCUDA) then
-                # _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.MDDFT_tSPL_Pease_SIMT];
-                _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.NTT_KL];
+                _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.MDDFT_tSPL_Pease_SIMT];
                 _opts.breakdownRules.MDPRDFT := [fftx.platforms.cuda.MDPRDFT_tSPL_Pease_SIMT];
                 _opts.breakdownRules.IMDPRDFT := [fftx.platforms.cuda.IMDPRDFT_tSPL_Pease_SIMT];
                 _opts.breakdownRules.TTwiddle := [ TTwiddle_Tw1 ];
@@ -276,8 +274,7 @@ ParseOptsCUDA := function(conf, t)
                 # opts for high performance CUDA cuFFT
                 if (ObjId(_tt) in [MDRConv, MDRConvR, IOPrunedMDRConv] and ForAll(_tt.params[1], i-> i in _HPCSupportedSizesCUDA)) or
                     (ObjId(_tt) in [TTensorI, TTensorInd] and ForAll(_tt.params[1].params[1], i-> i in _HPCSupportedSizesCUDA)) then
-                    # _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.MDDFT_tSPL_Pease_SIMT];
-                    _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.NTT_KL];
+                    _opts.breakdownRules.MDDFT := [fftx.platforms.cuda.MDDFT_tSPL_Pease_SIMT];
                     _opts.breakdownRules.MDPRDFT := [fftx.platforms.cuda.MDPRDFT_tSPL_Pease_SIMT];
                     _opts.breakdownRules.IMDPRDFT := [fftx.platforms.cuda.IMDPRDFT_tSPL_Pease_SIMT];
                     _opts.breakdownRules.TTwiddle := [ TTwiddle_Tw1 ];

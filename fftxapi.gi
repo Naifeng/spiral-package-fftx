@@ -92,7 +92,6 @@ Class(FFTXGenMixin, rec(
                         c := SubstVars(c, rec(X := Xptr, Y := Yptr));
                         cc := fixReplicatedData(c, self);
                         cc := Rewrite(cc, RulesDropSymDecl, self);
-                        
                         plist := Collect(cc, @(1,func, e->e.id="transform"))[1].params;
                         plist1 := _orderedUniquify(plist);
                         if Length(plist1) = 2 then 

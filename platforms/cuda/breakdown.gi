@@ -308,7 +308,6 @@ NewRulesFor(TTensorI, rec(
         apply := (nt, c, cnt) -> c[1]
     ),
 
-#   Q: put this in nttx?
 #   L (I x A) without peeling
 #   adapted from L (I x A) below
     L_IxA_SIMT_nopeel := rec(

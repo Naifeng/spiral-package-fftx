@@ -314,7 +314,7 @@ NewRulesFor(TTensorI, rec(
         forTransposition := false,
         # L^mn_n * (I_m (x) A_n) 
         applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsVecPar(nt.params) and nt.params[2] > 1,
-        children := (self, nt) >> let(n := Rows(nt.params[1]), m := nt.params[2],
+        children := (self, nt) >> let( n := Rows(nt.params[1]), m := nt.params[2],
             [[ TCompose([   
                         TL(m*n, n, 1, 1), 
                         TTensorI(nt.params[1], m, APar, APar)
@@ -323,15 +323,40 @@ NewRulesFor(TTensorI, rec(
     ),
 #   (I x A) L without peeling
 #   adapted from (I x A) L below
+#   forward NTT
     IxA_L_SIMT_nopeel := rec(
         forTransposition := false,
         # (I_m (x) A_n) L^mn_m
         applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsParVec(nt.params) and nt.params[2] > 1,
-        children := (self, nt) >> let(n := Cols(nt.params[1]), m := nt.params[2],
-            [[ TCompose([
-                TTensorI(nt.params[1], m, APar, APar),
-                TL(m*n, m, 1, 1) 
-                ]).withTags(nt.getTags()) ]]),
+        children := (self, nt) >> 
+            let(n := Cols(nt.params[1]), 
+                m := nt.params[2],
+                [[ TCompose([
+                    TTensorI(nt.params[1], m, APar, APar),
+                    TL(m*n, m, 1, 1) ]).withTags(nt.getTags()) 
+                ]]),
+        apply := (nt, c, cnt) -> c[1]
+    ),
+
+#   loop-based (I x A) L without peeling
+    IxA_L_SIMT_nopeel_loop := rec(
+        forTransposition := false,
+        # (I_m (x) A_n) L^mn_m
+        applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsParVec(nt.params) and nt.params[2] > 1,
+        
+        children := (self, nt) >> # Error(),
+            let(n := Cols(nt.params[1]), 
+                m := nt.params[2],
+                [[ TCompose([
+                    
+                    # TTensorI(nt.params[1], m, APar, APar),
+                    TTensorI(nt.params[1], 4, APar, APar), # test for 4096
+                    SIMTTensor(1024, Tensor(I(2), nt.params[1])),
+
+                    TL(m*n, m, 1, 1) ]).withTags(nt.getTags()) 
+                ]]),
+        SIMTTensor(_toSIMTDim(nt.getTags(), nt.params[2]), c[1], I(nt.params[2]))
+        
         apply := (nt, c, cnt) -> c[1]
     ),
 

@@ -309,20 +309,24 @@ NewRulesFor(TTensorI, rec(
     ),
 
 #   L (I x A) without peeling
-#   adapted from L (I x A) below
+#   adapted from L_IxA_SIMT
+#   inverse NTT
     L_IxA_SIMT_nopeel := rec(
         forTransposition := false,
         # L^mn_n * (I_m (x) A_n) 
         applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsVecPar(nt.params) and nt.params[2] > 1,
-        children := (self, nt) >> let( n := Rows(nt.params[1]), m := nt.params[2],
-            [[ TCompose([   
-                        TL(m*n, n, 1, 1), 
-                        TTensorI(nt.params[1], m, APar, APar)
-                        ]).withTags(nt.getTags()) ]]),
+        children := (self, nt) >> 
+            let(n := Rows(nt.params[1]), 
+                m := nt.params[2],
+                [[ TCompose([   
+                    TL(m*n, n, 1, 1), 
+                    TTensorI(nt.params[1], m, APar, APar)
+                    ]).withTags(nt.getTags()) 
+                ]]),
         apply := (nt, c, cnt) -> c[1]
     ),
 #   (I x A) L without peeling
-#   adapted from (I x A) L below
+#   adapted from IxA_L_SIMT
 #   forward NTT
     IxA_L_SIMT_nopeel := rec(
         forTransposition := false,
@@ -337,29 +341,6 @@ NewRulesFor(TTensorI, rec(
                 ]]),
         apply := (nt, c, cnt) -> c[1]
     ),
-
-#   loop-based (I x A) L without peeling
-    IxA_L_SIMT_nopeel_loop := rec(
-        forTransposition := false,
-        # (I_m (x) A_n) L^mn_m
-        applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsParVec(nt.params) and nt.params[2] > 1,
-        
-        children := (self, nt) >> # Error(),
-            let(n := Cols(nt.params[1]), 
-                m := nt.params[2],
-                [[ TCompose([
-                    
-                    # TTensorI(nt.params[1], m, APar, APar),
-                    TTensorI(nt.params[1], 4, APar, APar), # test for 4096
-                    SIMTTensor(1024, Tensor(I(2), nt.params[1])),
-
-                    TL(m*n, m, 1, 1) ]).withTags(nt.getTags()) 
-                ]]),
-        SIMTTensor(_toSIMTDim(nt.getTags(), nt.params[2]), c[1], I(nt.params[2]))
-        
-        apply := (nt, c, cnt) -> c[1]
-    ),
-
 
 #   L (I x A)
     L_IxA_SIMT := rec(
@@ -382,6 +363,7 @@ NewRulesFor(TTensorI, rec(
                     remainder, APar, APar)]).withTags(nt.getTags()) ]]),
         apply := (nt, c, cnt) -> c[1]
     ),
+
 #   (I x A) L
     IxA_L_SIMT := rec(
         forTransposition := false,
@@ -393,10 +375,11 @@ NewRulesFor(TTensorI, rec(
 #        max_threads := 1024,
         max_kernel := 18 * 18,
         _peelof := (self,n,m) >> Maximum(Filtered(self.mem_per_pt * Filtered(n*DivisorsInt(m), e-> e<self.max_threads), 
-            f -> f < When(n >= self.max_kernel, self.mem/2, self.mem)))/(self.mem_per_pt*n),
+            f -> f < When(n >= self.max_kernel, self.mem/2, self.mem)))/(self.mem_per_pt*n), 
         
         applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsParVec(nt.params) and nt.params[2] > 1,
-        children := (self, nt) >> let(n := Cols(nt.params[1]), m:= nt.params[2], peelof := self._peelof(n,m), remainder := m/peelof,
+        children := (self, nt) >> 
+            let(n := Cols(nt.params[1]), m:= nt.params[2], peelof := self._peelof(n,m), remainder := m/peelof,
             [[ TCompose([
                 TTensorI(
                     TCompose([TTensorI(nt.params[1], peelof, APar, APar), TL(Cols(nt.params[1]) * peelof, peelof)]), remainder, APar, APar),
@@ -404,6 +387,78 @@ NewRulesFor(TTensorI, rec(
                 ]).withTags(nt.getTags()) ]]),
         apply := (nt, c, cnt) -> c[1]
     ),
+
+# L (I x A) using nested loop 
+# mirrors L_IxA_SIMT. It peels off k iterations as the regular loop and leave the remainder with #max_threads iterations
+    L_IxA_SIMT_nested := rec(
+        forTransposition := false,
+        
+        max_threads := 1024,
+
+        # (I_km (x) A_n) L^kmn_km
+        applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsVecPar(nt.params) and nt.params[2] > 1,
+        children := (self, nt) >> 
+            let(
+                n := Rows(nt.params[1]), 
+                m := nt.params[2], # n/2
+                peelof := self.max_threads,
+                remainder := m/peelof,
+                # err := Error(),
+
+                [[ TCompose([
+                        TL(Rows(nt)/peelof, n, 1, peelof), 
+                        TensorI(
+                            TCompose([  TL(Rows(nt.params[1]) * peelof, Rows(nt.params[1])), 
+                                        TTensorI(nt.params[1], peelof, APar, APar)
+                                    ]),
+                            remainder, APar, APar
+                            ).withTags([ ASIMTLoopDim() ]), # Q: can I add it here?
+                        ]).withTags(nt.getTags()) 
+                ]]
+                ),
+        
+        apply := (nt, c, cnt) -> c[1]
+    ),
+
+# (I x A) L using nested loop 
+# mirrors IxA_L_SIMT. It peels off k iterations as the regular loop and leave the remainder with #max_threads iterations
+# I_km (x) A_n * L^kmn_km -> I_k (x) I_m (x) A_n * L^kmn_km
+    IxA_L_SIMT_nested := rec(
+        forTransposition := false,
+        
+        max_threads := 1024,
+
+        # (I_km (x) A_n) L^kmn_km
+        applicable := nt -> nt.hasTags() and _isSIMTTag(nt.firstTag()) and IsParVec(nt.params) and nt.params[2] > 1,
+        children := (self, nt) >> 
+            let(
+                n := Cols(nt.params[1]), 
+                m := nt.params[2], # n/2
+                peelof := self.max_threads,
+                remainder := m/peelof,
+                # err := Error(),
+
+                [[ TCompose([
+                        TTensorI(
+                            TCompose([  TTensorI(nt.params[1], peelof, APar, APar), 
+                                        TL(Cols(nt.params[1]) * peelof, peelof)
+                                    ]), 
+                            remainder, APar, APar
+                            ).withTags([ ASIMTLoopDim() ]), # Q: can I add it here?
+                        TL(Cols(nt)/peelof, (Cols(nt)/peelof)/n, 1, peelof)]).withTags(nt.getTags()) 
+
+                ]]
+                ),
+        
+        apply := (nt, c, cnt) -> c[1]
+    ),
+
+
+
+
+
+
+
 #   (I x A) 
     IxA_SIMT_peelof := rec(
         forTransposition := false,

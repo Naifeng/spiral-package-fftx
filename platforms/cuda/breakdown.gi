@@ -328,6 +328,7 @@ NewRulesFor(TTensorI, rec(
 #   (I x A) L without peeling
 #   adapted from IxA_L_SIMT
 #   forward NTT
+#   I_m (x) A_n * L^mn_m
     IxA_L_SIMT_nopeel := rec(
         forTransposition := false,
         # (I_m (x) A_n) L^mn_m
@@ -335,6 +336,7 @@ NewRulesFor(TTensorI, rec(
         children := (self, nt) >> 
             let(n := Cols(nt.params[1]), 
                 m := nt.params[2],
+                # err := Error(),
                 [[ TCompose([
                     TTensorI(nt.params[1], m, APar, APar),
                     TL(m*n, m, 1, 1) ]).withTags(nt.getTags()) 
